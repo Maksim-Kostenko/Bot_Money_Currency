@@ -1,11 +1,20 @@
 import os
+import time
 
 import telebot
 import dotenv
+import logging
 
 from extensions import Currency
 
 dotenv.load_dotenv()
+
+#Реализация и настройка logger
+logging.basicConfig(level=logging.ERROR,
+                    format='%(asctime)s - %(name)s - %(funcName)s - %(levelname)s - %(message)s',
+                    datefmt='%m/%d/%Y %I:%M:%S %p',
+                    handlers=[logging.StreamHandler(),
+                              logging.FileHandler('bot_errors.log')])
 
 TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 
@@ -46,7 +55,6 @@ def send_result_currency_transfer(message):
 
 try:
     bot.polling(none_stop=True)
-except TeleBotException as e:
-    logging.error(e)
-
-
+except Exception as e:
+    logging.error(e, exc_info=True)
+    time.sleep(5) #Выдержка, вдруг ошибка самоустранима
