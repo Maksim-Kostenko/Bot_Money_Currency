@@ -21,8 +21,6 @@ TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 
 bot = telebot.TeleBot(TOKEN)
 
-id_admin = '1481477252'
-
 #Перечень доступных валют к переводу (изменяем при необходимости)
 currency = {
     'Доллар': 'USD',
