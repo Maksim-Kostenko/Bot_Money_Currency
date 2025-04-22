@@ -14,10 +14,11 @@ class APIException(Exception):
 
 
 class Convertion:
+    """Основной класс, где реализовано получение данных от пользователя и API и конвертация"""
 
     @staticmethod
     def convert(message, currency):
-
+        """Обработка полученных данных из сообщения пользователя, замена введенных данных от пользователя на данные из таблицы currency"""
         if len(message.text.split(' ')) != 3:
             raise APIException('Не верный формат. Используйте: <Валюта, цену которой надо узнать>, '
             f'<Валюта , в которой надо узнать цену>, <Количество валюты>')
@@ -47,6 +48,7 @@ class Convertion:
 
     @classmethod
     def get_price(cls, base: str, quote: str, amount: str):
+        """Получение данных от API currencylayer, конвертация"""
         try:
             response = requests.get(f'http://apilayer.net/api/live?access_key={API_KEY}&currencies={quote}&source={base}&format=1')
             response.raise_for_status()

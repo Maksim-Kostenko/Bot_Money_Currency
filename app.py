@@ -41,7 +41,7 @@ def send_welcome_and_instruction(message):
 
 @bot.message_handler(commands=['value'])
 def send_currency_list(message):
-    """Ответ на команды /value"""
+    """Ответ на команду /value"""
     text = f'Доступная к конвертации валюта: \n'
     text += '\n'.join(currency.keys())
     bot.reply_to(message, text)
@@ -66,7 +66,7 @@ def send_result_currency_transfer(message):
         logging.error(e, exc_info=True)
 
 def start_bot():
-    """Запуск бота, реализован логирован ошибок, которые приводят к отключению бота и дальнейшему перезапуску"""
+    """Запуск бота"""
     while True:
         try:
             logging.info('Остановка предыдущего подключения...')
