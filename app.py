@@ -6,7 +6,7 @@ import telebot
 import dotenv
 import logging
 
-from extensions import Convertion, ConvertionException
+from extensions import Convertion, APIException
 
 dotenv.load_dotenv()
 
@@ -21,21 +21,24 @@ TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 
 bot = telebot.TeleBot(TOKEN)
 
+id_admin = '1481477252'
+
 #Перечень доступных валют к переводу (изменяем при необходимости)
 currency = {
     'Доллар': 'USD',
     'Рубль': 'RUB',
     'Евро': 'EUR',
-    'Польский_злотый': 'PLN'
 }
+
 
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome_and_instruction(message):
     """Ответ на команды /start и /help"""
-    text = (f'Добрый день, {message.chat.username}!\n'
+    text = (f'Привет, {message.chat.username}! Я бот для конвертации валют.\n'
             f'Чтобы воспользоваться функциями бота тебе необходимо отправить сообщение в формате <Валюта, цену которой надо узнать>, '
             f'<Валюта , в которой надо узнать цену>, <Количество валюты>\n'
-            f'Для того, что бы ознакомиться с доступным перечнем валюты отправьте в чат /value .')
+            f'Доступные команды:\n'
+            f'/value - список доступных валют\n')
     bot.reply_to(message, text)
 
 @bot.message_handler(commands=['value'])
@@ -55,19 +58,40 @@ def send_result_currency_transfer(message):
         result_convertion = Convertion.get_price(base_ticker, quote_ticker, amount)
         text = f'{result_convertion}\n'
         bot.reply_to(message, text)
-    except ConvertionException as e:
+    except APIException as e:
+        #Обработанные ошибки
         bot.reply_to(message, f"❌ Ошибка: {str(e)}")
-
-
+        logging.error(f'СurrencyAPI ошибка: {e}', exc_info=True)
+    except Exception as e:
+        #Непредвиденные ошибки
+        bot.reply_to(message, f"❌ Произошли непредвиденные обстоятельства, попробуйте не много позднее")
+        logging.error(e, exc_info=True)
 
 def start_bot():
+    """Запуск бота, реализован логирован ошибок, которые приводят к отключению бота и дальнейшему перезапуску"""
     while True:
         try:
+            logging.info('Остановка предыдущего подключения...')
+            try:
+                bot.stop_polling()
+                time.sleep(1)  # Даем время на завершение
+            except Exception as e:
+                logging.warning(f"Ошибка при остановке polling: {e}")
+
             logging.info('Старт бота...')
-            bot.polling(none_stop=True)
-        #Протестировать, на сколько рационально использовать торлько ApiException, мб корректно использовать еще просто Exception?
+            bot.polling(
+                none_stop=True,
+                skip_pending = True,
+                interval = 3,
+                timeout = 30,
+                restart_on_change=True,
+                )
         except ApiException as e:
-            logging.critical(e, exc_info=True)
+            logging.error(f'Telegram API ошибка: {e}', exc_info=True)
+            logging.info('Перезагрузка бота через 5 секунд...')
+            time.sleep(5) #Выдержка, вдруг ошибка самоустранима
+        except Exception as e:
+            logging.critical(f'Непредвиденная ошибка {e}', exc_info=True)
             logging.info('Перезагрузка бота через 5 секунд...')
             time.sleep(5) #Выдержка, вдруг ошибка самоустранима
 
